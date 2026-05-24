@@ -375,8 +375,43 @@ function loadTasks() {
 function loadModels() {
   try { return JSON.parse(localStorage.getItem(MODELS_KEY) || '[]') } catch { return [] }
 }
-function saveTasks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks)) }
-function saveModels() { localStorage.setItem(MODELS_KEY, JSON.stringify(state.models)) }
+// ── jsonbin sync ──────────────────────────────────────────────────────────────
+const BIN_ID  = '6a13838b6610dd3ae89d2d46'
+const BIN_KEY = '$2a$10$9K2KbKf35z9xQliBWMb/keLGgZHNf41mTxpv2CyYBGhj9oGdZ3gwq'
+const BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID
+const BIN_HDR = { 'Content-Type': 'application/json', 'X-Access-Key': BIN_KEY }
+
+let _syncTimer = null
+function scheduleSyncToBin() {
+  clearTimeout(_syncTimer)
+  _syncTimer = setTimeout(async () => {
+    try {
+      await fetch(BIN_URL, { method: 'PUT', headers: BIN_HDR, body: JSON.stringify({ tasks: state.tasks, models: state.models }) })
+      showToast('Synced')
+    } catch { showToast('Offline — saved locally') }
+  }, 800)
+}
+
+async function pullFromBin() {
+  try {
+    const res  = await fetch(BIN_URL + '/latest', { headers: BIN_HDR })
+    const data = await res.json()
+    const bin  = data.record
+    if (!bin) return
+    if (bin.tasks && bin.tasks.length > 0) {
+      state.tasks  = bin.tasks
+      state.models = bin.models || state.models
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks))
+      localStorage.setItem(MODELS_KEY,  JSON.stringify(state.models))
+      render()
+    } else if (state.tasks.length > 0) {
+      scheduleSyncToBin()
+    }
+  } catch {}
+}
+
+function saveTasks()  { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));  scheduleSyncToBin() }
+function saveModels() { localStorage.setItem(MODELS_KEY,  JSON.stringify(state.models)); scheduleSyncToBin() }
 
 const state = {
   tasks: loadTasks(),
@@ -933,6 +968,7 @@ function render() {
 }
 
 render()
+pullFromBin()
 </script>
 </body>
 </html>
