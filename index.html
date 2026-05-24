@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Doghaus Summer Plan</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080808; color: #e5e5e5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; }
+  a { color: inherit; }
+
+  /* layout */
+  .page { max-width: 900px; margin: 0 auto; padding: 40px 32px 80px; }
+
+  /* header */
+  .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 22px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: #fff; }
+  .header-left p { font-size: 12px; color: #525252; margin-top: 4px; }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .header-stats { font-size: 11px; color: #737373; }
+  .header-buttons { display: flex; gap: 8px; }
+
+  /* buttons */
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-export { background: #1a1a1a; color: #a3a3a3; border: 1px solid #2a2a2a; }
+  .btn-import { background: #1a1a1a; color: #a3a3a3; border: 1px solid #2a2a2a; }
+  .btn-add { background: #5b21b6; color: #fff; font-size: 11px; }
+  .btn-save { background: #5b21b6; color: #fff; }
+  .btn-cancel { background: transparent; color: #737373; border: none; }
+  .btn-sm { padding: 3px 8px; font-size: 10px; border-radius: 5px; }
+
+  /* filters */
+  .filters { background: #0f0f0f; border: 1px solid #1e1e1e; border-radius: 16px; padding: 16px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .filter-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: #525252; margin-bottom: 6px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 4px 10px; border-radius: 999px; font-size: 11px; cursor: pointer; border: none; background: transparent; color: #525252; transition: all .15s; }
+  .chip:hover { color: #d4d4d4; }
+  .chip.active { color: #fff; }
+  .chip-all.active { background: #404040; color: #f5f5f5; }
+
+  /* assignee colors */
+  .a-C        { background: rgba(139,92,246,.2); color: #c4b5fd; }
+  .a-KC       { background: rgba(245,158,11,.2); color: #fcd34d; }
+  .a-Eve      { background: rgba(20,184,166,.2);  color: #5eead4; }
+  .a-Emmaline { background: rgba(14,165,233,.2);  color: #7dd3fc; }
+  .a-Sarah    { background: rgba(244,63,94,.2);   color: #fda4af; }
+  .a-TBD      { background: #262626; color: #737373; }
+
+  /* status colors */
+  .s-todo        { background: #262626; color: #737373; }
+  .s-in-progress { background: rgba(14,165,233,.2); color: #7dd3fc; }
+  .s-done        { background: rgba(34,197,94,.2);  color: #86efac; }
+
+  /* category colors */
+  .c-logistics   { background: rgba(64,64,64,.4);  color: #a3a3a3; }
+  .c-styling     { background: rgba(217,70,239,.15); color: #e879f9; }
+  .c-hair-makeup { background: rgba(236,72,153,.15); color: #f9a8d4; }
+  .c-radio       { background: rgba(14,165,233,.15); color: #7dd3fc; }
+  .c-video       { background: rgba(59,130,246,.15); color: #93c5fd; }
+  .c-interview   { background: rgba(132,204,22,.15); color: #bef264; }
+  .c-website     { background: rgba(139,92,246,.15); color: #c4b5fd; }
+  .c-fashion     { background: rgba(244,63,94,.15);  color: #fda4af; }
+  .c-dj          { background: rgba(6,182,212,.15);  color: #67e8f9; }
+  .c-drag        { background: rgba(168,85,247,.15); color: #d8b4fe; }
+  .c-general     { background: rgba(64,64,64,.4);   color: #a3a3a3; }
+
+  /* phase section */
+  .phase { border-radius: 16px; overflow: hidden; margin-bottom: 32px; }
+  .phase-photoshoot { border: 1px solid rgba(244,63,94,.3); background: #0f0f0f; }
+  .phase-show       { border: 1px solid rgba(14,165,233,.3); background: #0f0f0f; }
+  .phase-event      { border: 1px solid rgba(245,158,11,.3); background: #0f0f0f; }
+
+  .phase-header { padding: 18px 24px; border-bottom: 1px solid #1a1a1a; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .phase-title { font-size: 12px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+  .phase-photoshoot .phase-title { color: #fda4af; }
+  .phase-show       .phase-title { color: #7dd3fc; }
+  .phase-event      .phase-title { color: #fcd34d; }
+  .phase-sublabel { font-size: 11px; color: #525252; margin-top: 2px; }
+  .phase-date { font-size: 11px; color: #737373; margin-top: 3px; }
+  .phase-date .countdown { font-weight: 600; }
+  .countdown-soon { color: #f87171; }
+  .countdown-mid  { color: #fbbf24; }
+  .countdown-ok   { color: #737373; }
+  .phase-progress { text-align: right; flex-shrink: 0; }
+  .phase-progress-text { font-size: 11px; color: #a3a3a3; font-weight: 600; }
+  .progress-bar { width: 112px; height: 4px; background: #262626; border-radius: 999px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width .3s; }
+  .phase-photoshoot .progress-fill { background: #f43f5e; }
+  .phase-show       .progress-fill { background: #0ea5e9; }
+  .phase-event      .progress-fill { background: #f59e0b; }
+  .progress-fill.complete { background: #22c55e !important; }
+
+  .phase-body { padding: 16px 12px; }
+
+  /* model table */
+  .model-section { background: #0a0a0a; border: 1px solid #1e1e1e; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; }
+  .model-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .model-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: #fda4af; }
+  .model-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .model-table th { text-align: left; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #525252; padding-bottom: 8px; padding-right: 16px; }
+  .model-table td { padding: 6px 16px 6px 0; border-top: 1px solid #1e1e1e; }
+  .model-input { background: transparent; border: none; border-bottom: 1px solid transparent; color: #d4d4d4; font-size: 11px; width: 100%; min-width: 80px; outline: none; padding: 2px 0; }
+  .model-input:hover { border-bottom-color: #404040; }
+  .model-input:focus { border-bottom-color: rgba(139,92,246,.6); }
+  .model-input::placeholder { color: #3f3f3f; }
+  .model-empty { font-size: 11px; color: #404040; padding: 4px 0; }
+
+  /* category group */
+  .cat-group { margin-bottom: 20px; }
+  .cat-header { display: flex; align-items: center; gap: 8px; padding: 0 12px; margin-bottom: 6px; }
+  .cat-badge { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; padding: 2px 8px; border-radius: 4px; }
+  .cat-count { font-size: 10px; color: #404040; }
+
+  /* task row */
+  .task-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 12px; border-radius: 8px; transition: background .1s; position: relative; }
+  .task-row:hover { background: #131313; }
+  .task-row:hover .task-actions { opacity: 1; }
+
+  .task-check { width: 14px; height: 14px; border: 1px solid #404040; border-radius: 3px; flex-shrink: 0; margin-top: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 8px; transition: all .15s; }
+  .task-check.done { background: rgba(34,197,94,.25); border-color: rgba(34,197,94,.5); color: #86efac; }
+  .task-check:hover:not(.done) { border-color: #a3a3a3; }
+
+  .task-main { flex: 1; min-width: 0; }
+  .task-text { font-size: 12px; color: #e5e5e5; line-height: 1.4; cursor: default; }
+  .task-text.done { text-decoration: line-through; color: #525252; }
+  .task-notes { font-size: 10px; color: #525252; font-style: italic; margin-top: 2px; line-height: 1.3; }
+  .task-text-input { background: #0a0a0a; border: 1px solid rgba(139,92,246,.4); border-radius: 4px; color: #fff; font-size: 12px; width: 100%; outline: none; padding: 2px 6px; }
+  .task-notes-input { background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 4px; color: #737373; font-size: 10px; width: 100%; outline: none; padding: 2px 6px; margin-top: 3px; }
+
+  .task-meta { display: flex; align-items: center; gap: 5px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+  .badge-select { font-size: 9px; padding: 2px 6px; border-radius: 4px; border: none; cursor: pointer; outline: none; -webkit-appearance: none; }
+  .due-ok      { background: #1a1a1a; color: #525252; }
+  .due-today   { background: rgba(34,197,94,.15); color: #86efac; }
+  .due-overdue { background: rgba(239,68,68,.15); color: #fca5a5; }
+  .due-done    { background: #111; color: #3f3f3f; }
+
+  .task-actions { opacity: 0; display: flex; gap: 4px; align-items: center; }
+  .task-action-btn { background: none; border: none; color: #404040; cursor: pointer; font-size: 10px; padding: 2px; transition: color .15s; line-height: 1; }
+  .task-action-btn:hover { color: #e5e5e5; }
+  .task-action-btn.del:hover { color: #f87171; }
+
+  /* add task form */
+  .add-task-form { margin-top: 16px; background: #111; border: 1px solid #2a2a2a; border-radius: 12px; padding: 12px; }
+  .add-task-input { background: transparent; border: none; border-bottom: 1px solid #404040; color: #fff; font-size: 13px; width: 100%; outline: none; padding: 4px 0 6px; margin-bottom: 10px; }
+  .add-task-input:focus { border-bottom-color: rgba(139,92,246,.7); }
+  .add-task-input::placeholder { color: #404040; }
+  .add-task-selects { display: flex; gap: 8px; flex-wrap: wrap; }
+  .add-select { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; color: #d4d4d4; font-size: 11px; padding: 4px 8px; outline: none; cursor: pointer; }
+  .add-task-buttons { display: flex; gap: 6px; margin-top: 10px; justify-content: flex-end; }
+  .add-task-toggle { margin-top: 16px; width: 100%; padding: 8px; background: transparent; border: 1px dashed #2a2a2a; border-radius: 8px; color: #404040; cursor: pointer; font-size: 11px; transition: color .15s; }
+  .add-task-toggle:hover { color: #737373; }
+
+  /* interview note */
+  .note-banner { background: #0a0a0a; border: 1px solid rgba(132,204,22,.2); border-radius: 10px; padding: 10px 14px; margin-bottom: 20px; }
+  .note-banner-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #bef264; margin-bottom: 3px; }
+  .note-banner-text { font-size: 11px; color: #525252; line-height: 1.5; }
+
+  /* import hidden */
+  #import-input { display: none; }
+
+  /* toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 10px 16px; font-size: 12px; color: #d4d4d4; opacity: 0; transform: translateY(8px); transition: all .25s; pointer-events: none; z-index: 100; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  select option { background: #1a1a1a; }
+  input[type=file] { display: none; }
+
+  /* password gate */
+  #pw-gate { position: fixed; inset: 0; background: #080808; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+  .pw-box { background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 16px; padding: 40px 36px; width: 320px; display: flex; flex-direction: column; gap: 16px; }
+  .pw-title { font-size: 13px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: #fff; text-align: center; }
+  .pw-sub { font-size: 11px; color: #525252; text-align: center; }
+  .pw-input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; color: #e5e5e5; font-size: 13px; padding: 10px 14px; outline: none; width: 100%; }
+  .pw-input:focus { border-color: #5b21b6; }
+  .pw-btn { background: #5b21b6; color: #fff; border: none; border-radius: 8px; padding: 10px; font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: .05em; }
+  .pw-btn:hover { opacity: .85; }
+  .pw-error { font-size: 11px; color: #f43f5e; text-align: center; display: none; }
+</style>
+</head>
+<body>
+
+<div id="pw-gate">
+  <div class="pw-box">
+    <div class="pw-title">◆ Doghaus</div>
+    <div class="pw-sub">Team access only</div>
+    <input class="pw-input" id="pw-input" type="password" placeholder="Password" autofocus />
+    <button class="pw-btn" id="pw-btn">Enter</button>
+    <div class="pw-error" id="pw-error">Wrong password</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>Doghaus Summer Plan</h1>
+      <p>Production board — fashion × music × art · Jun 13 · Jun 20 · Jul 11</p>
+    </div>
+    <div class="header-right">
+      <div class="header-stats" id="global-stats">0 / 0 done</div>
+      <div class="header-buttons">
+        <button class="btn btn-import" onclick="triggerImport()">↑ Import JSON</button>
+        <button class="btn btn-export" onclick="exportData()">↓ Export JSON</button>
+      </div>
+      <input type="file" id="import-input" accept=".json" onchange="importData(event)" />
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div>
+      <div class="filter-label">Assignee</div>
+      <div class="chip-row" id="assignee-filter"></div>
+    </div>
+    <div>
+      <div class="filter-label">Category</div>
+      <div class="chip-row" id="category-filter"></div>
+    </div>
+  </div>
+
+  <!-- Phases -->
+  <div id="phases"></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── auth gate ─────────────────────────────────────────────────────────────────
+;(function() {
+  const PW = 'doghaus_cookie_420_666'
+  const SESSION_KEY = 'doghaus_auth'
+  const gate = document.getElementById('pw-gate')
+  if (sessionStorage.getItem(SESSION_KEY) === '1') { gate.style.display = 'none'; return }
+  const input = document.getElementById('pw-input')
+  const btn   = document.getElementById('pw-btn')
+  const err   = document.getElementById('pw-error')
+  function attempt() {
+    if (input.value === PW) {
+      sessionStorage.setItem(SESSION_KEY, '1')
+      gate.style.display = 'none'
+    } else {
+      err.style.display = 'block'
+      input.value = ''
+      input.focus()
+    }
+  }
+  btn.addEventListener('click', attempt)
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') attempt() })
+})()
+
+// ── data ──────────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'doghaus_summer_plan_v1'
+const MODELS_KEY  = 'doghaus_summer_models_v1'
+
+const ASSIGNEES = ['C', 'KC', 'Eve', 'Emmaline', 'Sarah', 'TBD']
+
+const ASSIGNEE_COLORS = {
+  C:        'a-C',
+  KC:       'a-KC',
+  Eve:      'a-Eve',
+  Emmaline: 'a-Emmaline',
+  Sarah:    'a-Sarah',
+  TBD:      'a-TBD',
+}
+
+const STATUS_CYCLE = { 'todo': 'in-progress', 'in-progress': 'done', 'done': 'todo' }
+
+const CATEGORY_LABELS = {
+  logistics:     'Logistics',
+  styling:       'Styling',
+  'hair-makeup': 'Hair + Makeup',
+  radio:         'Radio',
+  video:         'Video',
+  interview:     'Interview',
+  website:       'Website / Shop',
+  fashion:       'Fashion / Catwalk',
+  dj:            'DJs',
+  drag:          'Drag',
+  general:       'General',
+}
+
+const PHASE_CATEGORIES = {
+  photoshoot: ['logistics', 'styling', 'hair-makeup'],
+  show:       ['radio', 'video', 'interview', 'website'],
+  event:      ['fashion', 'website', 'dj', 'drag', 'logistics'],
+}
+
+const PHASES = [
+  { id: 'photoshoot', label: 'JUNE 13', sublabel: 'Photoshoot — First Batch', date: '2026-06-13', cls: 'phase-photoshoot' },
+  { id: 'show',       label: 'JUNE 20', sublabel: 'Show — Radio / Video / Interviews', date: '2026-06-20', cls: 'phase-show' },
+  { id: 'event',      label: 'JULY 11', sublabel: 'Main Event — Catwalk + Shop + Lineup', date: '2026-07-11', cls: 'phase-event' },
+]
+
+const SEED_TASKS = [
+  // ── JUNE 13 PHOTOSHOOT ────────────────────────────────────────────────────
+  { id:'dh-ps-001', phase:'photoshoot', category:'logistics',   text:'Finalize model list + time slots',          assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-10' },
+  { id:'dh-ps-002', phase:'photoshoot', category:'logistics',   text:'Call time sheet for all models',            assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-11' },
+  { id:'dh-ps-003', phase:'photoshoot', category:'logistics',   text:'BTS photographer / videographer confirmed', assignee:'C',  status:'todo', notes:'Finn (potential)',dueDate:'2026-06-10' },
+  { id:'dh-ps-004', phase:'photoshoot', category:'logistics',   text:'Cover TT spot fully white',                 assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-12' },
+  { id:'dh-ps-005', phase:'photoshoot', category:'logistics',   text:'Source + prep floral bathtub set',          assignee:'C',  status:'todo', notes:'Dynamic shots with floral bathtub', dueDate:'2026-06-12' },
+  { id:'dh-ps-006', phase:'photoshoot', category:'logistics',   text:'Garments pressed + steamed (day before)',   assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-12' },
+  { id:'dh-ps-007', phase:'photoshoot', category:'logistics',   text:'Shot list — floral bathtub dynamic',        assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-10' },
+  { id:'dh-ps-008', phase:'photoshoot', category:'logistics',   text:'Shot list — white background only shots',   assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-10' },
+  { id:'dh-ps-009', phase:'photoshoot', category:'styling',     text:'Lock styling plan per model',               assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-10' },
+  { id:'dh-ps-010', phase:'photoshoot', category:'styling',     text:'Pull accessories + shoes per look',         assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-12' },
+  { id:'dh-ps-011', phase:'photoshoot', category:'hair-makeup', text:'Hair plan per model',                       assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-10' },
+  { id:'dh-ps-012', phase:'photoshoot', category:'hair-makeup', text:'Hair test / trial if needed',               assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-11' },
+  { id:'dh-ps-013', phase:'photoshoot', category:'hair-makeup', text:'Hair supplies purchased',                   assignee:'C',  status:'todo', notes:'',                dueDate:'2026-06-12' },
+  { id:'dh-ps-014', phase:'photoshoot', category:'hair-makeup', text:'Makeup plan per model',                     assignee:'KC', status:'todo', notes:'',                dueDate:'2026-06-10' },
+  { id:'dh-ps-015', phase:'photoshoot', category:'hair-makeup', text:'Makeup test / trial if needed',             assignee:'KC', status:'todo', notes:'',                dueDate:'2026-06-11' },
+  { id:'dh-ps-016', phase:'photoshoot', category:'hair-makeup', text:'Makeup supplies purchased',                 assignee:'KC', status:'todo', notes:'',                dueDate:'2026-06-12' },
+  // ── JUNE 20 SHOW ──────────────────────────────────────────────────────────
+  { id:'dh-sh-001', phase:'show', category:'radio',     text:'Brazen set recorded for radio',                assignee:'C',   status:'todo', notes:'',              dueDate:'2026-06-18' },
+  { id:'dh-sh-002', phase:'show', category:'radio',     text:'Tisiphone set ready for radio',                assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-18' },
+  { id:'dh-sh-003', phase:'show', category:'radio',     text:'Upload + schedule both radio sets',            assignee:'C',   status:'todo', notes:'',              dueDate:'2026-06-19' },
+  { id:'dh-sh-021', phase:'show', category:'radio',     text:'KC — mix of songs from musician friends',      assignee:'KC',  status:'todo', notes:'Doghaus + beyond, for radio / show',          dueDate:'2026-06-18' },
+  { id:'dh-sh-004', phase:'show', category:'video',     text:'Kingdom Harm — bedroom session edit',          assignee:'Eve', status:'todo', notes:'Eve editing',   dueDate:'2026-06-17' },
+  { id:'dh-sh-005', phase:'show', category:'video',     text:'Tisiphone + Catie — performance edit',         assignee:'C',   status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-006', phase:'show', category:'video',     text:'Export + publish both videos',                 assignee:'C',   status:'todo', notes:'',              dueDate:'2026-06-19' },
+  { id:'dh-sh-007', phase:'show', category:'interview', text:'Interview: Tisiphone + Catie (Gnashing)',      assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-008', phase:'show', category:'interview', text:'Interview: Warmachine',                        assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-009', phase:'show', category:'interview', text:'Interview: Misuser',                           assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-010', phase:'show', category:'interview', text:'Interview: Pleasure Coffin',                   assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-011', phase:'show', category:'interview', text:'Interview: Kingdom Harm',                      assignee:'KC',  status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-012', phase:'show', category:'interview', text:'Interview: Brazen',                            assignee:'C',   status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-013', phase:'show', category:'interview', text:'Interview: Brat Attack',                       assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-014', phase:'show', category:'interview', text:'Interview: Finny Max',                         assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-015', phase:'show', category:'interview', text:'Interview: Topher',                            assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-016', phase:'show', category:'interview', text:'Interview: Cabilon',                           assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-017', phase:'show', category:'interview', text:'Interview: Gerhardt Dekunst',                  assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-018', phase:'show', category:'interview', text:'Interview: Knora',                             assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-019', phase:'show', category:'interview', text:'Interview: Tripp',                             assignee:'TBD', status:'todo', notes:'',              dueDate:'2026-06-17' },
+  { id:'dh-sh-022', phase:'show', category:'website',   text:'KC — send IG photos to C for website',         assignee:'KC',  status:'todo', notes:'photos KC posted on IG', dueDate:'2026-06-16' },
+  { id:'dh-sh-020', phase:'show', category:'website',   text:'Artist spotlight section live',                assignee:'C',   status:'todo', notes:'',              dueDate:'2026-06-19' },
+  // ── JULY 11 MAIN EVENT ────────────────────────────────────────────────────
+  { id:'dh-ev-001', phase:'event', category:'fashion',   text:'Total garment count confirmed',              assignee:'C',  status:'todo', notes:'How many fits total?', dueDate:'2026-07-01' },
+  { id:'dh-ev-002', phase:'event', category:'fashion',   text:'All garments completed',                     assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-08' },
+  { id:'dh-ev-003', phase:'event', category:'fashion',   text:'Catwalk order + model assignments',          assignee:'C',  status:'todo', notes:'All contributor models', dueDate:'2026-07-05' },
+  { id:'dh-ev-004', phase:'event', category:'fashion',   text:'Contributor model lineup confirmed',         assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-05' },
+  { id:'dh-ev-005', phase:'event', category:'fashion',   text:'Fitting session scheduled',                  assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-06' },
+  { id:'dh-ev-006', phase:'event', category:'fashion',   text:'Catwalk rehearsal / run-through',            assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-09' },
+  { id:'dh-ev-007', phase:'event', category:'website',   text:'Product photos done',                        assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-05' },
+  { id:'dh-ev-008', phase:'event', category:'website',   text:'Pricing finalized',                          assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-05' },
+  { id:'dh-ev-009', phase:'event', category:'website',   text:'Shop section live on website',               assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-08' },
+  { id:'dh-ev-010', phase:'event', category:'dj',        text:'Invite: DJ Rayvino (@childish.rayvino)',     assignee:'C',  status:'todo', notes:'suggestion',          dueDate:'2026-06-15' },
+  { id:'dh-ev-011', phase:'event', category:'dj',        text:'Invite: Kutta and Kong (@kuttaxkong)',       assignee:'C',  status:'todo', notes:'suggestion',          dueDate:'2026-06-15' },
+  { id:'dh-ev-012', phase:'event', category:'dj',        text:'DJ set times + lineup order locked',         assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-05' },
+  { id:'dh-ev-013', phase:'event', category:'drag',      text:'Invite: Ricky Reyes',                        assignee:'C',  status:'todo', notes:'suggested · assign to drag direction?', dueDate:'2026-06-15' },
+  { id:'dh-ev-014', phase:'event', category:'drag',      text:'Invite: artcritique',                        assignee:'C',  status:'todo', notes:'suggested',           dueDate:'2026-06-15' },
+  { id:'dh-ev-015', phase:'event', category:'drag',      text:'Invite: MX Kranium',                         assignee:'C',  status:'todo', notes:'suggested',           dueDate:'2026-06-15' },
+  { id:'dh-ev-016', phase:'event', category:'drag',      text:'Invite: @solterita_drag',                    assignee:'C',  status:'todo', notes:'suggested',           dueDate:'2026-06-15' },
+  { id:'dh-ev-017', phase:'event', category:'drag',      text:'Invite: @tear.abyte',                        assignee:'C',  status:'todo', notes:'suggested',           dueDate:'2026-06-15' },
+  { id:'dh-ev-018', phase:'event', category:'drag',      text:'Invite: @og.liv.loves.napz',                 assignee:'C',  status:'todo', notes:'suggested',           dueDate:'2026-06-15' },
+  { id:'dh-ev-019', phase:'event', category:'drag',      text:'Drag performance order + timeline',          assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-05' },
+  { id:'dh-ev-023', phase:'event', category:'drag',      text:'Finalize profit share % for drag performers', assignee:'C',  status:'todo', notes:'portion of fashion sale profits goes to drag performers', dueDate:'2026-07-05' },
+  { id:'dh-ev-024', phase:'event', category:'drag',      text:'Ricky Reyes — coordinate drag models for catwalk', assignee:'C', status:'todo', notes:'potential role: organizing drag performers in catwalk section', dueDate:'2026-06-20' },
+  { id:'dh-ev-020', phase:'event', category:'logistics', text:'Venue tech rider + load-in time confirmed',  assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-01' },
+  { id:'dh-ev-021', phase:'event', category:'logistics', text:'Day-of run sheet',                           assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-08' },
+  { id:'dh-ev-022', phase:'event', category:'logistics', text:'Event photographer confirmed',               assignee:'C',  status:'todo', notes:'',                    dueDate:'2026-07-01' },
+]
+
+// ── state ─────────────────────────────────────────────────────────────────────
+
+function loadTasks() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+    if (stored && stored.length > 0) return stored
+  } catch {}
+  return JSON.parse(JSON.stringify(SEED_TASKS))
+}
+function loadModels() {
+  try { return JSON.parse(localStorage.getItem(MODELS_KEY) || '[]') } catch { return [] }
+}
+function saveTasks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks)) }
+function saveModels() { localStorage.setItem(MODELS_KEY, JSON.stringify(state.models)) }
+
+const state = {
+  tasks: loadTasks(),
+  models: loadModels(),
+  assigneeFilter: 'all',
+  categoryFilter: 'all',
+  addingPhase: null,
+  editingId: null,
+}
+
+// ── migrations ────────────────────────────────────────────────────────────────
+;(function runMigrations() {
+  let dirty = false
+
+  if (!localStorage.getItem('doghaus_mig_merc_to_c_v1')) {
+    state.tasks = state.tasks.map(t => t.assignee === 'merC' ? { ...t, assignee: 'C' } : t)
+    localStorage.setItem('doghaus_mig_merc_to_c_v1', '1')
+    dirty = true
+  }
+
+  if (!localStorage.getItem('doghaus_mig_kc_ig_photos_v1')) {
+    if (!state.tasks.find(t => t.id === 'dh-sh-022')) {
+      const idx = state.tasks.findIndex(t => t.id === 'dh-sh-020')
+      const newTask = { id:'dh-sh-022', phase:'show', category:'website', text:'KC — send IG photos to C for website', assignee:'KC', status:'todo', notes:'photos KC posted on IG', dueDate:'2026-06-16' }
+      state.tasks.splice(idx, 0, newTask)
+    }
+    localStorage.setItem('doghaus_mig_kc_ig_photos_v1', '1')
+    dirty = true
+  }
+
+  if (!localStorage.getItem('doghaus_mig_drag_notes_v1')) {
+    const DRAG_IDS = ['dh-ev-014', 'dh-ev-015', 'dh-ev-016', 'dh-ev-017', 'dh-ev-018']
+    state.tasks = state.tasks.map(t => {
+      if (t.id === 'dh-ev-013') return { ...t, notes: 'suggested · assign to drag direction?' }
+      if (DRAG_IDS.includes(t.id)) return { ...t, notes: 'suggested' }
+      return t
+    })
+    localStorage.setItem('doghaus_mig_drag_notes_v1', '1')
+    dirty = true
+  }
+
+  if (dirty) saveTasks()
+})()
+
+// ── helpers ───────────────────────────────────────────────────────────────────
+
+function uid() { return 'task-' + Math.random().toString(36).slice(2, 10) }
+function modelUid() { return 'model-' + Math.random().toString(36).slice(2, 10) }
+
+function daysUntil(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0)
+  const target = new Date(dateStr + 'T00:00:00')
+  return Math.ceil((target - today) / 86400000)
+}
+
+function fmtDate(dateStr) {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.classList.add('show')
+  setTimeout(() => t.classList.remove('show'), 2200)
+}
+
+// ── export / import ───────────────────────────────────────────────────────────
+
+function exportData() {
+  const payload = { tasks: state.tasks, models: state.models, exportedAt: new Date().toISOString() }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'doghaus-summer-plan-' + new Date().toISOString().slice(0,10) + '.json'
+  a.click()
+  showToast('Exported ✓')
+}
+
+function triggerImport() { document.getElementById('import-input').click() }
+
+function importData(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result)
+      if (data.tasks) { state.tasks = data.tasks; saveTasks() }
+      if (data.models) { state.models = data.models; saveModels() }
+      render()
+      showToast('Imported ✓')
+    } catch { showToast('Invalid file') }
+    e.target.value = ''
+  }
+  reader.readAsText(file)
+}
+
+// ── task operations ───────────────────────────────────────────────────────────
+
+function toggleTask(id) {
+  const t = state.tasks.find(t => t.id === id)
+  if (!t) return
+  t.status = t.status === 'done' ? 'todo' : 'done'
+  saveTasks(); render()
+}
+
+function cycleStatus(id) {
+  const t = state.tasks.find(t => t.id === id)
+  if (!t) return
+  t.status = STATUS_CYCLE[t.status]
+  saveTasks(); render()
+}
+
+function updateAssignee(id, val) {
+  const t = state.tasks.find(t => t.id === id)
+  if (t) { t.assignee = val; saveTasks(); render() }
+}
+
+function deleteTask(id) {
+  state.tasks = state.tasks.filter(t => t.id !== id)
+  saveTasks(); render()
+}
+
+function saveTaskText(id, text, notes) {
+  const t = state.tasks.find(t => t.id === id)
+  if (t) { if (text.trim()) t.text = text.trim(); t.notes = notes; saveTasks() }
+  state.editingId = null; render()
+}
+
+function addTask(phase, text, category, assignee) {
+  if (!text.trim()) return
+  state.tasks.push({ id: uid(), phase, category, text: text.trim(), assignee, status: 'todo', notes: '' })
+  state.addingPhase = null
+  saveTasks(); render()
+}
+
+// ── model operations ──────────────────────────────────────────────────────────
+
+function addModel() {
+  state.models.push({ id: modelUid(), name: '', timeSlot: '', looks: '', hairNotes: '', makeupNotes: '' })
+  saveModels(); render()
+  // focus first input of new row
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.model-input')
+    if (inputs.length) inputs[inputs.length - 5].focus()
+  }, 50)
+}
+
+function updateModel(id, field, val) {
+  const m = state.models.find(m => m.id === id)
+  if (m) { m[field] = val; saveModels() }
+}
+
+function deleteModel(id) {
+  state.models = state.models.filter(m => m.id !== id)
+  saveModels(); render()
+}
+
+// ── render ────────────────────────────────────────────────────────────────────
+
+function renderFilters() {
+  // assignee
+  const af = document.getElementById('assignee-filter')
+  af.innerHTML = ''
+  const allA = document.createElement('button')
+  allA.className = 'chip chip-all' + (state.assigneeFilter === 'all' ? ' active' : '')
+  allA.textContent = 'all'
+  allA.onclick = () => { state.assigneeFilter = 'all'; render() }
+  af.appendChild(allA)
+  ASSIGNEES.forEach(a => {
+    const b = document.createElement('button')
+    b.className = 'chip badge ' + ASSIGNEE_COLORS[a] + (state.assigneeFilter === a ? ' active' : '')
+    b.textContent = a
+    b.style.opacity = state.assigneeFilter !== 'all' && state.assigneeFilter !== a ? '0.4' : '1'
+    b.onclick = () => { state.assigneeFilter = state.assigneeFilter === a ? 'all' : a; render() }
+    af.appendChild(b)
+  })
+
+  // category
+  const cf = document.getElementById('category-filter')
+  cf.innerHTML = ''
+  const allC = document.createElement('button')
+  allC.className = 'chip chip-all' + (state.categoryFilter === 'all' ? ' active' : '')
+  allC.textContent = 'all'
+  allC.onclick = () => { state.categoryFilter = 'all'; render() }
+  cf.appendChild(allC)
+  Object.entries(CATEGORY_LABELS).forEach(([key, label]) => {
+    const b = document.createElement('button')
+    b.className = 'chip badge c-' + key + (state.categoryFilter === key ? ' active' : '')
+    b.style.opacity = state.categoryFilter !== 'all' && state.categoryFilter !== key ? '0.4' : '1'
+    b.textContent = label
+    b.onclick = () => { state.categoryFilter = state.categoryFilter === key ? 'all' : key; render() }
+    cf.appendChild(b)
+  })
+}
+
+function renderPhases() {
+  const container = document.getElementById('phases')
+  container.innerHTML = ''
+
+  PHASES.forEach(phase => {
+    const phaseTasks = state.tasks.filter(t => t.phase === phase.id)
+    const total = phaseTasks.length
+    const done = phaseTasks.filter(t => t.status === 'done').length
+    const pct = total > 0 ? (done / total) * 100 : 0
+
+    const days = daysUntil(phase.date)
+    const countdownClass = days <= 14 ? 'countdown-soon' : days <= 30 ? 'countdown-mid' : 'countdown-ok'
+    const countdownText = days > 0 ? `${days} days away` : days === 0 ? 'TODAY' : `${Math.abs(days)}d ago`
+
+    const section = document.createElement('div')
+    section.className = 'phase ' + phase.cls
+
+    // header
+    section.innerHTML = `
+      <div class="phase-header">
+        <div>
+          <div class="phase-title">${phase.label} <span style="font-weight:400;font-size:10px;letter-spacing:.05em;opacity:.6">— ${phase.sublabel}</span></div>
+          <div class="phase-date">
+            ${new Date(phase.date + 'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}
+            &nbsp;·&nbsp;<span class="countdown ${countdownClass}">${countdownText}</span>
+          </div>
+        </div>
+        <div class="phase-progress">
+          <div class="phase-progress-text">${done} / ${total}</div>
+          <div class="progress-bar"><div class="progress-fill${done===total&&total>0?' complete':''}" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+    `
+
+    const body = document.createElement('div')
+    body.className = 'phase-body'
+
+    // model table (photoshoot only)
+    if (phase.id === 'photoshoot') {
+      body.appendChild(renderModelTable())
+    }
+
+    // interview note
+    if (phase.id === 'show') {
+      const note = document.createElement('div')
+      note.className = 'note-banner'
+      note.innerHTML = `<div class="note-banner-title">Interview distribution</div>
+        <div class="note-banner-text">13 interviews need assigning before Jun 20. KC → Kingdom Harm, C → Brazen, rest TBD. Use the assignee dropdown to distribute.</div>`
+      body.appendChild(note)
+    }
+
+    // tasks grouped by category
+    const filtered = phaseTasks.filter(t =>
+      (state.assigneeFilter === 'all' || t.assignee === state.assigneeFilter) &&
+      (state.categoryFilter === 'all' || t.category === state.categoryFilter)
+    )
+
+    const catOrder = PHASE_CATEGORIES[phase.id]
+    const grouped = new Map()
+    catOrder.forEach(cat => {
+      const rows = filtered.filter(t => t.category === cat)
+      if (rows.length) grouped.set(cat, rows)
+    })
+    const extra = filtered.filter(t => !catOrder.includes(t.category))
+    if (extra.length) grouped.set('general', extra)
+
+    if (grouped.size === 0) {
+      const empty = document.createElement('p')
+      empty.style.cssText = 'font-size:11px;color:#404040;padding:8px 12px'
+      empty.textContent = 'No tasks match the current filter.'
+      body.appendChild(empty)
+    } else {
+      grouped.forEach((tasks, cat) => {
+        const group = document.createElement('div')
+        group.className = 'cat-group'
+        const catDone = tasks.filter(t => t.status === 'done').length
+        group.innerHTML = `<div class="cat-header">
+          <span class="cat-badge badge c-${cat}">${CATEGORY_LABELS[cat] || cat}</span>
+          <span class="cat-count">${catDone}/${tasks.length}</span>
+        </div>`
+        tasks.forEach(task => group.appendChild(renderTaskRow(task)))
+        body.appendChild(group)
+      })
+    }
+
+    // add task button / form
+    if (state.addingPhase === phase.id) {
+      body.appendChild(renderAddForm(phase.id))
+    } else {
+      const btn = document.createElement('button')
+      btn.className = 'add-task-toggle'
+      btn.textContent = `+ Add task to ${phase.label}`
+      btn.onclick = () => { state.addingPhase = phase.id; render() }
+      body.appendChild(btn)
+    }
+
+    section.appendChild(body)
+    container.appendChild(section)
+  })
+}
+
+function renderModelTable() {
+  const wrap = document.createElement('div')
+  wrap.className = 'model-section'
+  wrap.innerHTML = `<div class="model-section-header">
+    <span class="model-section-title">Model List + Schedule</span>
+    <button class="btn btn-sm" style="background:#1a1a1a;color:#fda4af;border:1px solid rgba(244,63,94,.3)" onclick="addModel()">+ Add model</button>
+  </div>`
+
+  if (state.models.length === 0) {
+    const empty = document.createElement('p')
+    empty.className = 'model-empty'
+    empty.textContent = 'No models yet — add them to plan time slots and looks.'
+    wrap.appendChild(empty)
+    return wrap
+  }
+
+  const table = document.createElement('table')
+  table.className = 'model-table'
+  table.innerHTML = `<thead><tr>
+    <th>Model</th><th>Time slot</th><th>Look / styling</th><th>Hair</th><th>Makeup (KC)</th><th></th>
+  </tr></thead>`
+  const tbody = document.createElement('tbody')
+  state.models.forEach(m => {
+    const tr = document.createElement('tr')
+    const fields = [
+      {f:'name',        ph:'Name'},
+      {f:'timeSlot',    ph:'e.g. 2:00–3:00pm'},
+      {f:'looks',       ph:'Look description'},
+      {f:'hairNotes',   ph:'Hair plan'},
+      {f:'makeupNotes', ph:'Makeup plan'},
+    ]
+    fields.forEach(({f, ph}) => {
+      const td = document.createElement('td')
+      const inp = document.createElement('input')
+      inp.className = 'model-input'
+      inp.placeholder = ph
+      inp.value = m[f]
+      inp.onblur = e => updateModel(m.id, f, e.target.value)
+      if (f === 'name') inp.style.color = '#e5e5e5'
+      td.appendChild(inp)
+      tr.appendChild(td)
+    })
+    const tdDel = document.createElement('td')
+    const del = document.createElement('button')
+    del.className = 'task-action-btn del'
+    del.textContent = '✕'
+    del.onclick = () => deleteModel(m.id)
+    tdDel.appendChild(del)
+    tr.appendChild(tdDel)
+    tbody.appendChild(tr)
+  })
+  table.appendChild(tbody)
+  wrap.appendChild(table)
+  return wrap
+}
+
+function renderTaskRow(task) {
+  const row = document.createElement('div')
+  row.className = 'task-row'
+
+  const today = new Date().toISOString().slice(0, 10)
+  const done = task.status === 'done'
+  const overdue = task.dueDate && task.dueDate < today && !done
+  const isToday = task.dueDate === today
+
+  if (state.editingId === task.id) {
+    // edit mode
+    const check = document.createElement('div')
+    check.className = 'task-check' + (done ? ' done' : '')
+    check.textContent = done ? '✓' : ''
+    check.onclick = () => toggleTask(task.id)
+
+    const main = document.createElement('div')
+    main.className = 'task-main'
+
+    const textInp = document.createElement('input')
+    textInp.className = 'task-text-input'
+    textInp.value = task.text
+    textInp.id = 'edit-text-' + task.id
+
+    const notesInp = document.createElement('input')
+    notesInp.className = 'task-notes-input'
+    notesInp.placeholder = 'Notes…'
+    notesInp.value = task.notes || ''
+    notesInp.id = 'edit-notes-' + task.id
+
+    const saveBtn = document.createElement('button')
+    saveBtn.className = 'btn btn-sm btn-save'
+    saveBtn.style.marginTop = '6px'
+    saveBtn.textContent = 'Save'
+    saveBtn.onclick = () => saveTaskText(task.id, textInp.value, notesInp.value)
+
+    const cancelBtn = document.createElement('button')
+    cancelBtn.className = 'btn btn-sm btn-cancel'
+    cancelBtn.style.marginTop = '6px'
+    cancelBtn.textContent = 'Cancel'
+    cancelBtn.onclick = () => { state.editingId = null; render() }
+
+    main.appendChild(textInp)
+    main.appendChild(notesInp)
+    const btns = document.createElement('div')
+    btns.style.display = 'flex'; btns.style.gap = '6px'
+    btns.appendChild(saveBtn); btns.appendChild(cancelBtn)
+    main.appendChild(btns)
+
+    row.appendChild(check)
+    row.appendChild(main)
+    setTimeout(() => textInp.focus(), 30)
+    return row
+  }
+
+  // normal mode
+  const check = document.createElement('div')
+  check.className = 'task-check' + (done ? ' done' : '')
+  check.textContent = done ? '✓' : ''
+  check.onclick = () => toggleTask(task.id)
+
+  const main = document.createElement('div')
+  main.className = 'task-main'
+  const textEl = document.createElement('div')
+  textEl.className = 'task-text' + (done ? ' done' : '')
+  textEl.textContent = task.text
+  main.appendChild(textEl)
+  if (task.notes) {
+    const notesEl = document.createElement('div')
+    notesEl.className = 'task-notes'
+    notesEl.textContent = task.notes
+    main.appendChild(notesEl)
+  }
+
+  const meta = document.createElement('div')
+  meta.className = 'task-meta'
+
+  // assignee select
+  const asel = document.createElement('select')
+  asel.className = 'badge badge-select ' + (ASSIGNEE_COLORS[task.assignee] || 'a-TBD')
+  ASSIGNEES.forEach(a => {
+    const opt = document.createElement('option')
+    opt.value = a; opt.textContent = a
+    if (a === task.assignee) opt.selected = true
+    asel.appendChild(opt)
+  })
+  asel.onchange = e => updateAssignee(task.id, e.target.value)
+  meta.appendChild(asel)
+
+  // status badge
+  const sbadge = document.createElement('button')
+  sbadge.className = 'badge s-' + task.status
+  sbadge.style.cssText = 'border:none;cursor:pointer;'
+  sbadge.textContent = task.status
+  sbadge.title = 'Click to cycle status'
+  sbadge.onclick = () => cycleStatus(task.id)
+  meta.appendChild(sbadge)
+
+  // due date
+  if (task.dueDate) {
+    const due = document.createElement('span')
+    due.className = 'badge ' + (done ? 'due-done' : overdue ? 'due-overdue' : isToday ? 'due-today' : 'due-ok')
+    due.textContent = fmtDate(task.dueDate)
+    meta.appendChild(due)
+  }
+
+  // actions
+  const actions = document.createElement('div')
+  actions.className = 'task-actions'
+  const editBtn = document.createElement('button')
+  editBtn.className = 'task-action-btn'
+  editBtn.title = 'Edit'
+  editBtn.textContent = '✎'
+  editBtn.onclick = () => { state.editingId = task.id; render() }
+  const delBtn = document.createElement('button')
+  delBtn.className = 'task-action-btn del'
+  delBtn.title = 'Delete'
+  delBtn.textContent = '✕'
+  delBtn.onclick = () => { if (confirm('Delete this task?')) { deleteTask(task.id) } }
+  actions.appendChild(editBtn)
+  actions.appendChild(delBtn)
+
+  row.appendChild(check)
+  row.appendChild(main)
+  row.appendChild(meta)
+  row.appendChild(actions)
+  return row
+}
+
+function renderAddForm(phaseId) {
+  const wrap = document.createElement('div')
+  wrap.className = 'add-task-form'
+
+  const inp = document.createElement('input')
+  inp.className = 'add-task-input'
+  inp.placeholder = 'Task description…'
+  inp.id = 'add-inp-' + phaseId
+
+  const selects = document.createElement('div')
+  selects.className = 'add-task-selects'
+
+  const catSel = document.createElement('select')
+  catSel.className = 'add-select'
+  catSel.id = 'add-cat-' + phaseId
+  PHASE_CATEGORIES[phaseId].forEach(c => {
+    const opt = document.createElement('option')
+    opt.value = c; opt.textContent = CATEGORY_LABELS[c]
+    catSel.appendChild(opt)
+  })
+
+  const aSel = document.createElement('select')
+  aSel.className = 'add-select'
+  aSel.id = 'add-a-' + phaseId
+  ASSIGNEES.forEach(a => {
+    const opt = document.createElement('option')
+    opt.value = a; opt.textContent = a
+    aSel.appendChild(opt)
+  })
+
+  selects.appendChild(catSel)
+  selects.appendChild(aSel)
+
+  const btns = document.createElement('div')
+  btns.className = 'add-task-buttons'
+
+  const cancel = document.createElement('button')
+  cancel.className = 'btn btn-cancel'
+  cancel.textContent = 'Cancel'
+  cancel.onclick = () => { state.addingPhase = null; render() }
+
+  const save = document.createElement('button')
+  save.className = 'btn btn-save'
+  save.textContent = 'Add'
+  save.onclick = () => addTask(phaseId, inp.value, catSel.value, aSel.value)
+
+  inp.onkeydown = e => {
+    if (e.key === 'Enter') addTask(phaseId, inp.value, catSel.value, aSel.value)
+    if (e.key === 'Escape') { state.addingPhase = null; render() }
+  }
+
+  btns.appendChild(cancel)
+  btns.appendChild(save)
+  wrap.appendChild(inp)
+  wrap.appendChild(selects)
+  wrap.appendChild(btns)
+
+  setTimeout(() => inp.focus(), 30)
+  return wrap
+}
+
+function updateGlobalStats() {
+  const total = state.tasks.length
+  const done = state.tasks.filter(t => t.status === 'done').length
+  document.getElementById('global-stats').textContent = `${done} / ${total} done`
+}
+
+function render() {
+  renderFilters()
+  renderPhases()
+  updateGlobalStats()
+}
+
+render()
+</script>
+</body>
+</html>
