@@ -200,6 +200,7 @@
     </div>
     <div class="header-right">
       <div class="header-stats" id="global-stats">0 / 0 done</div>
+      <div id="sync-status" style="font-size:10px;color:#555;margin-top:2px;text-align:right;"></div>
       <div class="header-buttons">
         <button class="btn btn-import" onclick="triggerImport()">↑ Import JSON</button>
         <button class="btn btn-export" onclick="exportData()">↓ Export JSON</button>
@@ -382,33 +383,56 @@ const BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID
 const BIN_HDR = { 'Content-Type': 'application/json', 'X-Access-Key': BIN_KEY }
 
 let _syncTimer = null
+function setSyncStatus(msg, color) {
+  const el = document.getElementById('sync-status')
+  if (el) { el.textContent = msg; el.style.color = color || '#555' }
+}
+async function pushToBin() {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(BIN_URL, { method: 'PUT', headers: BIN_HDR, body: JSON.stringify({ tasks: state.tasks, models: state.models }) })
+      if (!res.ok) throw new Error(res.status)
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      setSyncStatus('synced ' + now, '#555')
+      showToast('Synced')
+      return
+    } catch {
+      if (attempt < 2) await new Promise(r => setTimeout(r, 1200 * (attempt + 1)))
+    }
+  }
+  setSyncStatus('⚠ sync failed — save Export JSON', '#b45309')
+  showToast('Offline — saved locally')
+}
 function scheduleSyncToBin() {
   clearTimeout(_syncTimer)
-  _syncTimer = setTimeout(async () => {
-    try {
-      await fetch(BIN_URL, { method: 'PUT', headers: BIN_HDR, body: JSON.stringify({ tasks: state.tasks, models: state.models }) })
-      showToast('Synced')
-    } catch { showToast('Offline — saved locally') }
-  }, 800)
+  setSyncStatus('saving…', '#555')
+  _syncTimer = setTimeout(pushToBin, 800)
 }
 
 async function pullFromBin() {
+  setSyncStatus('loading…', '#555')
   try {
     const res  = await fetch(BIN_URL + '/latest', { headers: BIN_HDR })
     const data = await res.json()
     const bin  = data.record
-    if (!bin) return
+    if (!bin) { setSyncStatus('', ''); return }
     if (bin.tasks && bin.tasks.length > 0) {
       state.tasks  = bin.tasks
       state.models = bin.models || state.models
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks))
       localStorage.setItem(MODELS_KEY,  JSON.stringify(state.models))
       render()
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      setSyncStatus('loaded ' + now, '#555')
     } else if (state.tasks.length > 0) {
       scheduleSyncToBin()
     }
-  } catch {}
+  } catch { setSyncStatus('⚠ load failed', '#b45309') }
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') pullFromBin()
+})
 
 function saveTasks()  { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));  scheduleSyncToBin() }
 function saveModels() { localStorage.setItem(MODELS_KEY,  JSON.stringify(state.models)); scheduleSyncToBin() }
