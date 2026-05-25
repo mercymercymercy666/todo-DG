@@ -969,6 +969,13 @@ function render() {
 
 render()
 pullFromBin()
+
+window.addEventListener('beforeunload', () => {
+  if (_syncTimer) {
+    clearTimeout(_syncTimer)
+    fetch(BIN_URL, { method: 'PUT', headers: BIN_HDR, body: JSON.stringify({ tasks: state.tasks, models: state.models }), keepalive: true })
+  }
+})
 </script>
 </body>
 </html>
