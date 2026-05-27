@@ -371,21 +371,23 @@ function loadTasks() {
 function loadModels() {
   try { return JSON.parse(localStorage.getItem(MODELS_KEY) || '[]') } catch { return [] }
 }
-// ── jsonbin sync ──────────────────────────────────────────────────────────────
-const BIN_ID  = '6a13838b6610dd3ae89d2d46'
-const BIN_KEY = '$2a$10$9K2KbKf35z9xQliBWMb/keLGgZHNf41mTxpv2CyYBGhj9oGdZ3gwq'
-const BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID
-const BIN_HDR = { 'Content-Type': 'application/json', 'X-Access-Key': BIN_KEY }
+// ── cloudflare worker sync ────────────────────────────────────────────────────
+const WORKER_URL = 'https://doghaus-sync.merx.workers.dev'
+const WRITE_KEY  = 'doghaus_cookie_420_666'
 
 let _syncTimer = null
 function setSyncStatus(msg, color) {
   const el = document.getElementById('sync-status')
   if (el) { el.textContent = msg; el.style.color = color || '#555' }
 }
-async function pushToBin() {
+async function pushToWorker() {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const res = await fetch(BIN_URL, { method: 'PUT', headers: BIN_HDR, body: JSON.stringify({ tasks: state.tasks, models: state.models }) })
+      const res = await fetch(WORKER_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Write-Key': WRITE_KEY },
+        body: JSON.stringify({ tasks: state.tasks, models: state.models })
+      })
       if (!res.ok) throw new Error(res.status)
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       setSyncStatus('synced ' + now, '#555')
@@ -401,15 +403,14 @@ async function pushToBin() {
 function scheduleSyncToBin() {
   clearTimeout(_syncTimer)
   setSyncStatus('saving…', '#555')
-  _syncTimer = setTimeout(pushToBin, 800)
+  _syncTimer = setTimeout(pushToWorker, 800)
 }
 
 async function pullFromBin() {
   setSyncStatus('loading…', '#555')
   try {
-    const res  = await fetch(BIN_URL + '/latest', { headers: BIN_HDR })
-    const data = await res.json()
-    const bin  = data.record
+    const res  = await fetch(WORKER_URL)
+    const bin  = await res.json()
     if (!bin) { setSyncStatus('', ''); return }
     if (bin.tasks && bin.tasks.length > 0) {
       state.tasks  = bin.tasks
@@ -992,7 +993,7 @@ pullFromBin()
 window.addEventListener('beforeunload', () => {
   if (_syncTimer) {
     clearTimeout(_syncTimer)
-    fetch(BIN_URL, { method: 'PUT', headers: BIN_HDR, body: JSON.stringify({ tasks: state.tasks, models: state.models }), keepalive: true })
+    fetch(WORKER_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Write-Key': WRITE_KEY }, body: JSON.stringify({ tasks: state.tasks, models: state.models }), keepalive: true })
   }
 })
 </script>
